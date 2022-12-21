@@ -4,6 +4,9 @@
 	"patterns": [
 		{
 			"include": "#comment"
+		},
+		{
+			"include": "#state"
 		}
 	],
 	"repository": {
@@ -12,6 +15,14 @@
 				{
 					"name": "comment",
 					"match": "^#(.*)$"
+				}
+			]
+		},
+		"state": {
+			"patterns": [
+				{
+					"name": "entity.name.function",
+					"match": "^(?!.*\\s-\\s).*$"
 				}
 			]
 		}
