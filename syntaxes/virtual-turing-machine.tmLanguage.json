@@ -7,6 +7,9 @@
 		},
 		{
 			"include": "#state"
+		},
+		{
+			"include": "#operation"
 		}
 	],
 	"repository": {
@@ -23,6 +26,22 @@
 				{
 					"name": "entity.name.function",
 					"match": "^(?!.*\\s-\\s).*$"
+				},
+				{
+					"name": "keyword.control",
+					"match": "accept"
+				},
+				{
+					"name": "keyword.control",
+					"match": "reject"
+				}
+			]
+		},
+		"operation": {
+			"patterns": [
+				{
+					"name": "keyword.operator",
+					"match": " - "
 				}
 			]
 		}
