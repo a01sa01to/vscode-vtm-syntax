@@ -1,27 +1,22 @@
 import { languages } from "vscode";
 import type { ExtensionContext } from "vscode";
 
-import * as hoverProvider from "./hoverProvider";
-import * as definitionProvider from "./definitionProvider";
+import * as Provider from "./ProviderCommon";
+import hoverProvider from "./hoverProvider";
+import definitionProvider from "./definitionProvider";
 import * as completionItemProvider from "./completionItemProvider";
 
 export function activate(context: ExtensionContext) {
   console.log("Virtual Turing Machine Syntax is now active!");
   context.subscriptions.push(
-    languages.registerHoverProvider(
-      hoverProvider.selector,
-      hoverProvider.provider
-    )
+    languages.registerHoverProvider(Provider.selector, hoverProvider)
   );
   context.subscriptions.push(
-    languages.registerDefinitionProvider(
-      definitionProvider.selector,
-      definitionProvider.provider
-    )
+    languages.registerDefinitionProvider(Provider.selector, definitionProvider)
   );
   context.subscriptions.push(
     languages.registerCompletionItemProvider(
-      completionItemProvider.selector,
+      Provider.selector,
       completionItemProvider.provider,
       ...completionItemProvider.triggerCharacters
     )

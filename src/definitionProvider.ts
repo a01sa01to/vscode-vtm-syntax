@@ -1,13 +1,8 @@
 import { Location, Position, Uri } from "vscode";
-import type { DocumentSelector, DefinitionProvider } from "vscode";
-
-export const selector: DocumentSelector = {
-  language: "virtual-turing-machine",
-  scheme: "file",
-};
+import type { DefinitionProvider } from "vscode";
 
 // Todo: Implement
-export const provider: DefinitionProvider = {
+const defProvider: DefinitionProvider = {
   provideDefinition(document, position, token) {
     const range = document.getWordRangeAtPosition(position);
     if (range === undefined) {
@@ -20,3 +15,5 @@ export const provider: DefinitionProvider = {
     return new Location(uri, pos);
   },
 };
+
+export default defProvider;

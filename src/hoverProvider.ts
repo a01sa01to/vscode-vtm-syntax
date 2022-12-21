@@ -1,12 +1,7 @@
 import type { DocumentSelector, HoverProvider } from "vscode";
 
-export const selector: DocumentSelector = {
-  language: "virtual-turing-machine",
-  scheme: "file",
-};
-
 // Todo: Implement
-export const provider: HoverProvider = {
+const hoverProvider: HoverProvider = {
   provideHover(document, position, token) {
     const range = document.getWordRangeAtPosition(position);
     if (range === undefined) {
@@ -21,3 +16,5 @@ export const provider: HoverProvider = {
     };
   },
 };
+
+export default hoverProvider;
