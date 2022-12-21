@@ -1,25 +1,60 @@
 {
-  "name": "tm-syntax",
-  "displayName": "turing-machine-syntax",
+  "name": "vtm-syntax",
+  "displayName": "Virtual Turing Machine Syntax",
   "description": "Virtual Turing Machine Syntax",
+  "license": "MIT",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.74.0"
   },
+  "main": "./out/main.js",
+  "activationEvents": [
+    "onLanguage:virtual-turing-machine"
+  ],
   "categories": [
     "Programming Languages"
   ],
   "contributes": {
-    "languages": [{
-      "id": "virtual-turing-machine",
-      "aliases": ["virtual-turing-machine"],
-      "extensions": [".txt"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "virtual-turing-machine",
-      "scopeName": "source.vtm",
-      "path": "./syntaxes/virtual-turing-machine.tmLanguage.json"
-    }]
-  }
+    "languages": [
+      {
+        "id": "virtual-turing-machine",
+        "aliases": [
+          "virtual-turing-machine"
+        ],
+        "extensions": [
+          ".txt"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "virtual-turing-machine",
+        "scopeName": "source.vtm",
+        "path": "./syntaxes/virtual-turing-machine.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "yarn run compile && yarn run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.0.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "@vscode/test-electron": "^2.2.0",
+    "eslint": "^8.28.0",
+    "glob": "^8.0.3",
+    "mocha": "^10.1.0",
+    "typescript": "^4.9.3"
+  },
+  "packageManager": "yarn@3.3.1"
 }
