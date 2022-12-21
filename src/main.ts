@@ -3,6 +3,7 @@ import type { ExtensionContext } from "vscode";
 
 import * as hoverProvider from "./hoverProvider";
 import * as definitionProvider from "./definitionProvider";
+import * as completionItemProvider from "./completionItemProvider";
 
 export function activate(context: ExtensionContext) {
   console.log("Virtual Turing Machine Syntax is now active!");
@@ -16,6 +17,13 @@ export function activate(context: ExtensionContext) {
     languages.registerDefinitionProvider(
       definitionProvider.selector,
       definitionProvider.provider
+    )
+  );
+  context.subscriptions.push(
+    languages.registerCompletionItemProvider(
+      completionItemProvider.selector,
+      completionItemProvider.provider,
+      ...completionItemProvider.triggerCharacters
     )
   );
 }
