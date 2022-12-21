@@ -9,7 +9,7 @@
 			"include": "#state"
 		},
 		{
-			"include": "#operation"
+			"include": "#operator"
 		}
 	],
 	"repository": {
@@ -28,20 +28,24 @@
 					"match": "^(?!.*\\s-\\s).*$"
 				},
 				{
-					"name": "keyword.control",
+					"name": "support.constant",
 					"match": "accept"
 				},
 				{
-					"name": "keyword.control",
+					"name": "support.constant",
 					"match": "reject"
 				}
 			]
 		},
-		"operation": {
+		"operator": {
 			"patterns": [
 				{
 					"name": "keyword.operator",
 					"match": " - "
+				},
+				{
+					"name": "keyword.control",
+					"match": ","
 				}
 			]
 		}
