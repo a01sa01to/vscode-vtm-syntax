@@ -1,0 +1,25 @@
+{
+  "name": "tm-syntax",
+  "displayName": "turing-machine-syntax",
+  "description": "Virtual Turing Machine Syntax",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "virtual-turing-machine",
+      "aliases": ["virtual-turing-machine"],
+      "extensions": [".txt"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "virtual-turing-machine",
+      "scopeName": "source.vtm",
+      "path": "./syntaxes/virtual-turing-machine.tmLanguage.json"
+    }]
+  }
+}
