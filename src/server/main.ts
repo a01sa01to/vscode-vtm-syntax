@@ -21,21 +21,16 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import stateSpecialChar from "./state/specialChar";
 import stateManager from "./state/stateManager";
 
-// Create a connection for the server, using Node's IPC as a transport.
-// Also include all preview / proposed LSP features.
+// --------------- Global Variables ----------------- //
 const connection = createConnection(ProposedFeatures.all);
-
-// Create a simple text document manager.
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
-
 const states: string[] = [];
 
+// --------------- Server Functions ----------------- //
 connection.onInitialize((params: InitializeParams) => {
-  console.log("onInitialize");
   const capabilities = params.capabilities;
 
   // Does the client support the `workspace/configuration` request?
@@ -50,13 +45,6 @@ connection.onInitialize((params: InitializeParams) => {
     capabilities.textDocument &&
       capabilities.textDocument.publishDiagnostics &&
       capabilities.textDocument.publishDiagnostics.relatedInformation
-  );
-
-  console.log("hasConfigurationCapability", hasConfigurationCapability);
-  console.log("hasWorkspaceFolderCapability", hasWorkspaceFolderCapability);
-  console.log(
-    "hasDiagnosticRelatedInformationCapability",
-    hasDiagnosticRelatedInformationCapability
   );
 
   const result: InitializeResult = {
@@ -75,13 +63,10 @@ connection.onInitialize((params: InitializeParams) => {
       },
     };
   }
-
-  console.log("result", result);
   return result;
 });
 
 connection.onInitialized(() => {
-  console.log("onInitialized 78");
   if (hasConfigurationCapability) {
     // Register for all configuration changes.
     connection.client.register(
@@ -104,13 +89,12 @@ interface ExtensionSettings {
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings: ExtensionSettings = { maxNumberOfProblems: 1000 };
+const defaultSettings: ExtensionSettings = { maxNumberOfProblems: 100 };
 
 // Cache the settings of all open documents
 const documentSettings: Map<string, Thenable<ExtensionSettings>> = new Map();
 
 connection.onDidChangeConfiguration((change) => {
-  console.log("onDidChangeConfiguration");
   // Revalidate all open text documents
   documents.all().forEach(validateTextDocument);
 });
@@ -138,13 +122,10 @@ documents.onDidChangeContent((change) => {
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   const settings = await getDocumentSettings(textDocument.uri);
 
-  const text = textDocument.getText();
-
-  let problems = 0;
   const diagnostics: Diagnostic[] = [];
   for (let i = 0; i < textDocument.lineCount; i++) {
     // Many Problems
-    if (problems >= settings.maxNumberOfProblems) {
+    if (diagnostics.length >= settings.maxNumberOfProblems) {
       break;
     }
 
@@ -183,7 +164,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 }
 
 connection.onDidChangeWatchedFiles((_change) => {
-  console.log("onDidChangeWatchedFiles", _change);
   // Monitored files have change in VSCode
   connection.console.log("We received an file change event");
 });
