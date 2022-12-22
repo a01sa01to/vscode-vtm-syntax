@@ -2,12 +2,13 @@
   "name": "vtm-syntax",
   "displayName": "Virtual Turing Machine Syntax",
   "description": "Virtual Turing Machine Syntax",
+  "publisher": "a01sa01to",
   "license": "MIT",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.74.0"
   },
-  "main": "./out/main.js",
+  "main": "./out/client/main.js",
   "activationEvents": [
     "onLanguage:virtual-turing-machine"
   ],

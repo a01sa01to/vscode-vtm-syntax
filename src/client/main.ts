@@ -16,7 +16,7 @@ import updateDiagnosis from "./diagnosis";
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext): void {
-  const serverModule = context.asAbsolutePath(join("out", "server.js"));
+  const serverModule = context.asAbsolutePath(join("out", "server", "main.js"));
   const serverOptions: ServerOptions = {
     run: { module: serverModule, transport: TransportKind.ipc },
     debug: { module: serverModule, transport: TransportKind.ipc },

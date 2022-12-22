@@ -8,6 +8,7 @@ import {
   DiagnosticSeverity,
 } from "vscode-languageserver/node";
 import type {
+  Range,
   Diagnostic,
   InitializeParams,
   CompletionItem,
@@ -16,6 +17,8 @@ import type {
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
+
+import * as constant from "../const";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -130,46 +133,72 @@ documents.onDidChangeContent((change) => {
 });
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-  // In this simple example we get the settings for every validate run.
   const settings = await getDocumentSettings(textDocument.uri);
 
-  // The validator creates diagnostics for all uppercase words length 2 and more
   const text = textDocument.getText();
-  const pattern = /\b[A-Z]{2,}\b/g;
-  let m: RegExpExecArray | null;
+  const lines = text.split(/\r?\n/g);
 
   let problems = 0;
   const diagnostics: Diagnostic[] = [];
-  while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-    problems++;
-    const diagnostic: Diagnostic = {
-      severity: DiagnosticSeverity.Warning,
-      range: {
-        start: textDocument.positionAt(m.index),
-        end: textDocument.positionAt(m.index + m[0].length),
-      },
-      message: `${m[0]} is all uppercase.`,
-      source: "ex",
-    };
-    if (hasDiagnosticRelatedInformationCapability) {
-      diagnostic.relatedInformation = [
-        {
-          location: {
-            uri: textDocument.uri,
-            range: Object.assign({}, diagnostic.range),
-          },
-          message: "Spelling matters",
-        },
-        {
-          location: {
-            uri: textDocument.uri,
-            range: Object.assign({}, diagnostic.range),
-          },
-          message: "Particularly for names",
-        },
-      ];
+  for (let i = 0; i < textDocument.lineCount; i++) {
+    // Many Problems
+    if (problems >= settings.maxNumberOfProblems) {
+      break;
     }
-    diagnostics.push(diagnostic);
+
+    const rangeStart = textDocument.positionAt(
+      textDocument.offsetAt({ line: i, character: 0 })
+    );
+    const rangeEnd = textDocument.positionAt(
+      textDocument.offsetAt({ line: i, character: 1000 })
+    );
+    const lineRange: Range = { start: rangeStart, end: rangeEnd };
+    const line = textDocument.getText(lineRange);
+
+    // Skip comments
+    if (line.startsWith("#")) {
+      continue;
+    }
+    // Skip empty lines
+    if (line.trim().length === 0) {
+      continue;
+    }
+
+    // State
+    if (!line.includes(" - ")) {
+      const diagnostic: Diagnostic = {
+        severity: DiagnosticSeverity.Warning,
+        range: lineRange,
+        message: `State name should not contain spaces, hyphens and commas.`,
+        source: "VTM Syntax",
+      };
+      diagnostic.relatedInformation = [];
+      for (let j = 0; j < line.length; j++) {
+        const infoRange: Range = {
+          start: { line: i, character: j },
+          end: { line: i, character: j + 1 },
+        };
+        for (const sc of constant.specialChars) {
+          if (line[j] === sc) {
+            diagnostic.relatedInformation.push({
+              location: {
+                uri: textDocument.uri,
+                range: infoRange,
+              },
+              message: `State name should not contain ${
+                constant.char2str[line[j] as constant.SpecialChar]
+              }.`,
+            });
+          }
+        }
+      }
+      if (diagnostic.relatedInformation.length !== 0) {
+        if (!hasDiagnosticRelatedInformationCapability) {
+          diagnostic.relatedInformation = undefined;
+        }
+        diagnostics.push(diagnostic);
+      }
+    }
   }
 
   // Send the computed diagnostics to VSCode.
