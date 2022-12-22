@@ -2,6 +2,7 @@ import { DiagnosticSeverity } from "vscode-languageserver/node";
 import type { Range, Diagnostic } from "vscode-languageserver/node";
 import type { TextDocument } from "vscode-languageserver-textdocument";
 import validateState from "./validate";
+import generateDiagnostic from "../utils/generateDiagnostic";
 
 type TSpecialChar = " " | "-" | ",";
 const specialChars = [" ", "-", ","] as TSpecialChar[];
@@ -23,12 +24,11 @@ export default function stateSpecialChar(
     return;
   }
 
-  const diagnostic: Diagnostic = {
-    severity: DiagnosticSeverity.Warning,
-    range: lineRange,
-    message: `State name should not contain spaces, hyphens and commas.`,
-    source: "VTM Syntax",
-  };
+  const diagnostic = generateDiagnostic(
+    DiagnosticSeverity.Warning,
+    lineRange,
+    `State name should not contain spaces, hyphens and commas.`
+  );
   diagnostic.relatedInformation = [];
 
   // Read line char by char
@@ -40,7 +40,7 @@ export default function stateSpecialChar(
     // Check if char is a special char
     for (const sc of specialChars) {
       if (line[j] === sc) {
-        diagnostic.relatedInformation.push({
+        diagnostic.relatedInformation?.push({
           location: {
             uri: textDocument.uri,
             range: infoRange,
