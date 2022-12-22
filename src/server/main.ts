@@ -18,7 +18,7 @@ import type {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import * as constant from "../const";
+import stateSpecialChar from "./state/specialChar";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -136,7 +136,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   const settings = await getDocumentSettings(textDocument.uri);
 
   const text = textDocument.getText();
-  const lines = text.split(/\r?\n/g);
 
   let problems = 0;
   const diagnostics: Diagnostic[] = [];
@@ -165,40 +164,13 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     }
 
     // State
-    if (!line.includes(" - ")) {
-      const diagnostic: Diagnostic = {
-        severity: DiagnosticSeverity.Warning,
-        range: lineRange,
-        message: `State name should not contain spaces, hyphens and commas.`,
-        source: "VTM Syntax",
-      };
-      diagnostic.relatedInformation = [];
-      for (let j = 0; j < line.length; j++) {
-        const infoRange: Range = {
-          start: { line: i, character: j },
-          end: { line: i, character: j + 1 },
-        };
-        for (const sc of constant.specialChars) {
-          if (line[j] === sc) {
-            diagnostic.relatedInformation.push({
-              location: {
-                uri: textDocument.uri,
-                range: infoRange,
-              },
-              message: `State name should not contain ${
-                constant.char2str[line[j] as constant.SpecialChar]
-              }.`,
-            });
-          }
-        }
-      }
-      if (diagnostic.relatedInformation.length !== 0) {
-        if (!hasDiagnosticRelatedInformationCapability) {
-          diagnostic.relatedInformation = undefined;
-        }
-        diagnostics.push(diagnostic);
-      }
-    }
+    stateSpecialChar(
+      lineRange,
+      i,
+      textDocument,
+      hasDiagnosticRelatedInformationCapability,
+      diagnostics
+    );
   }
 
   // Send the computed diagnostics to VSCode.
