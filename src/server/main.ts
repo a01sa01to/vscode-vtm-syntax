@@ -19,6 +19,7 @@ import type {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import stateSpecialChar from "./state/specialChar";
+import stateManager from "./state/stateManager";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -30,6 +31,8 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
+
+const states: string[] = [];
 
 connection.onInitialize((params: InitializeParams) => {
   console.log("onInitialize");
@@ -171,6 +174,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       hasDiagnosticRelatedInformationCapability,
       diagnostics
     );
+    stateManager(lineRange, textDocument, states);
+    console.log(states);
   }
 
   // Send the computed diagnostics to VSCode.
