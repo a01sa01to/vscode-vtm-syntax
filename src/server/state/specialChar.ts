@@ -1,7 +1,7 @@
 import { DiagnosticSeverity } from "vscode-languageserver/node";
 import type { Range, Diagnostic } from "vscode-languageserver/node";
 import type { TextDocument } from "vscode-languageserver-textdocument";
-import validateState from "./validate";
+import getStateName from "./getName";
 import generateDiagnostic from "../utils/generateDiagnostic";
 
 type TSpecialChar = " " | "-" | ",";
@@ -16,11 +16,9 @@ export default function stateSpecialChar(
   hasDiagnosticRelatedInformationCapability: boolean,
   diagnostics: Diagnostic[]
 ): void {
-  // Get Line Text
-  const line = textDocument.getText(lineRange);
-
   // Check if line defines a state
-  if (!validateState(line)) {
+  const state = getStateName(textDocument.getText(lineRange));
+  if (!state) {
     return;
   }
 
@@ -32,21 +30,21 @@ export default function stateSpecialChar(
   diagnostic.relatedInformation = [];
 
   // Read line char by char
-  for (let j = 0; j < line.length; j++) {
+  for (let j = 0; j < state.length; j++) {
     const infoRange: Range = {
       start: { line: i, character: j },
       end: { line: i, character: j + 1 },
     };
     // Check if char is a special char
     for (const sc of specialChars) {
-      if (line[j] === sc) {
+      if (state[j] === sc) {
         diagnostic.relatedInformation?.push({
           location: {
             uri: textDocument.uri,
             range: infoRange,
           },
           message: `State name should not contain ${
-            char2str[line[j] as TSpecialChar]
+            char2str[state[j] as TSpecialChar]
           }.`,
         });
       }
