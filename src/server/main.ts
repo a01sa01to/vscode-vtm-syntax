@@ -19,6 +19,7 @@ import type {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import stateSpecialChar from "./state/specialChar";
+import stateOneChar from "./state/oneChar";
 import stateManager from "./state/stateManager";
 
 // --------------- Global Variables ----------------- //
@@ -155,6 +156,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       hasDiagnosticRelatedInformationCapability,
       diagnostics
     );
+    stateOneChar(lineRange, i, textDocument, diagnostics);
     stateManager(lineRange, textDocument, states);
     console.log(states);
   }
