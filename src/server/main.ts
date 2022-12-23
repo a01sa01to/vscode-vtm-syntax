@@ -20,6 +20,8 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 
 import stateSpecialChar from "./state/specialChar";
 import stateOneChar from "./state/oneChar";
+import stateLeadingNumber from "./state/leadingNumber";
+import stateNumberOnly from "./state/numberOnly";
 import stateManager from "./state/stateManager";
 
 // --------------- Global Variables ----------------- //
@@ -157,7 +159,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       diagnostics
     );
     stateOneChar(lineRange, i, textDocument, diagnostics);
+    stateNumberOnly(lineRange, i, textDocument, diagnostics);
+    stateLeadingNumber(lineRange, i, textDocument, diagnostics);
     stateManager(lineRange, textDocument, states);
+
     console.log(states);
   }
 
