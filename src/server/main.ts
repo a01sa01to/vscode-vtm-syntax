@@ -9,6 +9,7 @@ import {
 } from "vscode-languageserver/node";
 import type {
   Range,
+  Hover,
   Diagnostic,
   InitializeParams,
   CompletionItem,
@@ -24,6 +25,7 @@ import stateLeadingNumber from "./state/leadingNumber";
 import stateNumberOnly from "./state/numberOnly";
 import stateReserved from "./state/reserved";
 import stateManager from "./state/stateManager";
+import { State } from "./classes";
 
 // --------------- Global Variables ----------------- //
 const connection = createConnection(ProposedFeatures.all);
@@ -31,7 +33,7 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
-const states: string[] = [];
+const states: State[] = [];
 
 // --------------- Server Functions ----------------- //
 connection.onInitialize((params: InitializeParams) => {
@@ -55,6 +57,7 @@ connection.onInitialize((params: InitializeParams) => {
     capabilities: {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       // Tell the client that this server supports code completion.
+      hoverProvider: true,
       completionProvider: {
         resolveProvider: true,
       },
@@ -171,6 +174,19 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   // Send the computed diagnostics to VSCode.
   connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
+
+connection.onHover((_textDocumentPosition: TextDocumentPositionParams) => {
+  console.log("onHover", _textDocumentPosition);
+  const hover: Hover = {
+    contents: [
+      {
+        language: "markdown",
+        value: "This is a hover",
+      },
+    ],
+  };
+  return hover;
+});
 
 connection.onDidChangeWatchedFiles((_change) => {
   // Monitored files have change in VSCode
