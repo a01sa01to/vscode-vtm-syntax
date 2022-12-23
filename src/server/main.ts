@@ -24,7 +24,6 @@ import stateOneChar from "./state/oneChar";
 import stateLeadingNumber from "./state/leadingNumber";
 import stateNumberOnly from "./state/numberOnly";
 import stateReserved from "./state/reserved";
-import stateManager from "./state/stateManager";
 import { State } from "./classes";
 
 // --------------- Global Variables ----------------- //
@@ -143,7 +142,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       textDocument.offsetAt({ line: i, character: 1000 })
     );
     const lineRange: Range = { start: rangeStart, end: rangeEnd };
-    const line = textDocument.getText(lineRange);
+    const line = textDocument.getText(lineRange).replace(/\r?\n|\r/g, "");
 
     // Skip comments
     if (line.startsWith("#")) {
@@ -155,18 +154,21 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     }
 
     // State
-    stateSpecialChar(
-      lineRange,
-      i,
-      textDocument,
-      hasDiagnosticRelatedInformationCapability,
-      diagnostics
-    );
-    stateOneChar(lineRange, i, textDocument, diagnostics);
-    stateNumberOnly(lineRange, i, textDocument, diagnostics);
-    stateLeadingNumber(lineRange, i, textDocument, diagnostics);
-    stateReserved(lineRange, i, textDocument, diagnostics);
-    stateManager(lineRange, textDocument, states);
+    const stateName = line.includes(" - ") ? null : line;
+    if (stateName !== null) {
+      stateSpecialChar(
+        stateName,
+        lineRange,
+        textDocument,
+        hasDiagnosticRelatedInformationCapability,
+        diagnostics
+      );
+      stateOneChar(stateName, lineRange, diagnostics);
+      stateNumberOnly(stateName, lineRange, diagnostics);
+      stateLeadingNumber(stateName, lineRange, diagnostics);
+      stateReserved(stateName, lineRange, diagnostics);
+      states.push(new State(stateName));
+    }
 
     console.log(states);
   }
