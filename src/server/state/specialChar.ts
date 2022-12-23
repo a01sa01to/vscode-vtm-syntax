@@ -18,7 +18,7 @@ export default function stateSpecialChar(
   const diagnostic = generateDiagnostic(
     DiagnosticSeverity.Warning,
     lineRange,
-    `State name should not contain special characters.`
+    `State name should not contain special characters`
   );
   diagnostic.relatedInformation = [];
 
@@ -38,7 +38,7 @@ export default function stateSpecialChar(
           },
           message: `State name should not contain ${
             char2str[stateName[j] as TSpecialChar]
-          }.`,
+          }`,
         });
       }
     }

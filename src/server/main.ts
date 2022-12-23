@@ -20,11 +20,8 @@ import type {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import stateSpecialChar from "./state/specialChar";
-import stateOneChar from "./state/oneChar";
-import stateLeadingNumber from "./state/leadingNumber";
-import stateNumberOnly from "./state/numberOnly";
-import stateReserved from "./state/reserved";
 import { State } from "./classes";
+import generateDiagnostic from "./utils/generateDiagnostic";
 
 // --------------- Global Variables ----------------- //
 const connection = createConnection(ProposedFeatures.all);
@@ -163,11 +160,38 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
         hasDiagnosticRelatedInformationCapability,
         diagnostics
       );
-      stateOneChar(stateName, lineRange, diagnostics);
-      stateNumberOnly(stateName, lineRange, diagnostics);
-      stateLeadingNumber(stateName, lineRange, diagnostics);
-      stateReserved(stateName, lineRange, diagnostics);
+      if (stateName.length === 1) {
+        diagnostics.push(
+          generateDiagnostic(
+            DiagnosticSeverity.Warning,
+            lineRange,
+            "State name should be at least 2 characters long"
+          )
+        );
+      }
+      if (/^\d/.test(stateName)) {
+        diagnostics.push(
+          generateDiagnostic(
+            DiagnosticSeverity.Warning,
+            lineRange,
+            "State name should not start with a number"
+          )
+        );
+      }
+      if (/^(accept|reject)$/.test(stateName)) {
+        diagnostics.push(
+          generateDiagnostic(
+            DiagnosticSeverity.Error,
+            lineRange,
+            "This state name is reserved"
+          )
+        );
+      }
       states.push(new State(stateName));
+    }
+    // Operation
+    else {
+      // Todo
     }
 
     console.log(states);
