@@ -22,6 +22,7 @@ import stateSpecialChar from "./state/specialChar";
 import stateOneChar from "./state/oneChar";
 import stateLeadingNumber from "./state/leadingNumber";
 import stateNumberOnly from "./state/numberOnly";
+import stateReserved from "./state/reserved";
 import stateManager from "./state/stateManager";
 
 // --------------- Global Variables ----------------- //
@@ -161,6 +162,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     stateOneChar(lineRange, i, textDocument, diagnostics);
     stateNumberOnly(lineRange, i, textDocument, diagnostics);
     stateLeadingNumber(lineRange, i, textDocument, diagnostics);
+    stateReserved(lineRange, i, textDocument, diagnostics);
     stateManager(lineRange, textDocument, states);
 
     console.log(states);
