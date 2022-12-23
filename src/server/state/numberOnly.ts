@@ -14,7 +14,6 @@ export default function stateNumberOnly(
   if (!state) {
     return;
   }
-  console.log("stateNumberOnly");
 
   const diagnostic = generateDiagnostic(
     DiagnosticSeverity.Warning,

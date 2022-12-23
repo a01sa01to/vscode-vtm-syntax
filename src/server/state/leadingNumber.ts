@@ -14,7 +14,6 @@ export default function stateLeadingNumber(
   if (!state) {
     return;
   }
-  console.log("stateLeadingNumber");
 
   const diagnostic = generateDiagnostic(
     DiagnosticSeverity.Warning,
