@@ -26,10 +26,11 @@ import generateDiagnostic from "./utils/generateDiagnostic";
 // --------------- Global Variables ----------------- //
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+const states = new Map<string, State[]>();
+const config = new Map<string, { tapes: number; initialState: string }>();
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
-const states: State[] = [];
 
 // --------------- Server Functions ----------------- //
 connection.onInitialize((params: InitializeParams) => {
@@ -124,8 +125,11 @@ documents.onDidChangeContent((change) => {
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   const settings = await getDocumentSettings(textDocument.uri);
+  let fileStates: State[] = [];
+  let fileConfig = { tapes: 0, initialState: "" };
 
   const diagnostics: Diagnostic[] = [];
+  let nowParsingState = "";
   for (let i = 0; i < textDocument.lineCount; i++) {
     // Many Problems
     if (diagnostics.length >= settings.maxNumberOfProblems) {
@@ -141,6 +145,17 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     const lineRange: Range = { start: rangeStart, end: rangeEnd };
     const line = textDocument.getText(lineRange).replace(/\r?\n|\r/g, "");
 
+    // Config
+    if (line.startsWith("##")) {
+      if (line.toLowerCase().includes("tape")) {
+        fileConfig.tapes = parseInt(line.split(":")[1].trim());
+      }
+      if (line.toLowerCase().includes("initial")) {
+        fileConfig.initialState = line.split(":")[1].trim();
+      }
+      continue;
+    }
+
     // Skip comments
     if (line.startsWith("#")) {
       continue;
@@ -153,6 +168,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     // State
     const stateName = line.includes(" - ") ? null : line;
     if (stateName !== null) {
+      nowParsingState = stateName;
       stateSpecialChar(
         stateName,
         lineRange,
@@ -187,15 +203,57 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
           )
         );
       }
-      states.push(new State(stateName));
+      fileStates.push(new State(stateName));
     }
     // Operation
     else {
-      // Todo
+      const [cond, op] = line.split(" - ").map((s) => s.split(","));
+      const state = fileStates.find((s) => s.getName() === nowParsingState);
+      if (state === undefined) {
+        diagnostics.push(
+          generateDiagnostic(
+            DiagnosticSeverity.Error,
+            lineRange,
+            "You need to define a state first"
+          )
+        );
+      }
+      if (fileConfig.tapes === 0) {
+        diagnostics.push(
+          generateDiagnostic(
+            DiagnosticSeverity.Warning,
+            {
+              start: { line: 0, character: 0 },
+              end: { line: 0, character: 1000 },
+            },
+            "Please configure the number of tapes"
+          )
+        );
+      } else {
+        if (cond.length !== fileConfig.tapes) {
+          diagnostics.push(
+            generateDiagnostic(
+              DiagnosticSeverity.Error,
+              lineRange,
+              `Condition should have ${fileConfig.tapes} element(s)`
+            )
+          );
+        }
+        if (op.length !== fileConfig.tapes * 2 + 1) {
+          diagnostics.push(
+            generateDiagnostic(
+              DiagnosticSeverity.Error,
+              lineRange,
+              `Operation should have ${fileConfig.tapes * 2 + 1} element(s)`
+            )
+          );
+        }
+      }
     }
-
-    console.log(states);
   }
+  states.set(textDocument.uri, fileStates);
+  config.set(textDocument.uri, fileConfig);
+  console.log(config, states);
 
   // Send the computed diagnostics to VSCode.
   connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
@@ -207,7 +265,9 @@ connection.onHover((_textDocumentPosition: TextDocumentPositionParams) => {
     contents: [
       {
         language: "markdown",
-        value: "This is a hover",
+        value: `This is a hover\n\n${documents
+          .get(_textDocumentPosition.textDocument.uri)
+          ?.getText()}`,
       },
     ],
   };
