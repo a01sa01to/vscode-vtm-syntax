@@ -11,7 +11,8 @@ import * as Provider from "./ProviderCommon";
 import hoverProvider from "./hoverProvider";
 import definitionProvider from "./definitionProvider";
 import * as completionItemProvider from "./completionItemProvider";
-import updateDiagnosis from "./diagnosis";
+import * as highlight from "./highlight";
+// import updateDiagnosis from "./diagnosis";
 
 let client: LanguageClient;
 
@@ -23,15 +24,7 @@ export function activate(context: ExtensionContext): void {
   };
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [
-      {
-        language: "virtual-turing-machine",
-        scheme: "file",
-      },
-    ],
-    synchronize: {
-      fileEvents: workspace.createFileSystemWatcher("**/.clientrc"),
-    },
+    documentSelector: [{ language: "virtual-turing-machine" }],
   };
 
   client = new LanguageClient(
@@ -39,6 +32,13 @@ export function activate(context: ExtensionContext): void {
     "Virtual Turing Machine Language Server",
     serverOptions,
     clientOptions
+  );
+  context.subscriptions.push(
+    languages.registerDocumentSemanticTokensProvider(
+      Provider.selector,
+      highlight.provider,
+      highlight.legend
+    )
   );
   client.start();
 

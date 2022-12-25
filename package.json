@@ -28,13 +28,11 @@
         "configuration": "./language-configuration.json"
       }
     ],
-    "grammars": [
-      {
-        "language": "virtual-turing-machine",
-        "scopeName": "source.vtm",
-        "path": "./syntaxes/virtual-turing-machine.tmLanguage.json"
+    "configurationDefaults": {
+      "[virtual-turing-machine]": {
+        "editor.semanticHighlighting.enabled": true
       }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn run compile",
