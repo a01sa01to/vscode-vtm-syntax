@@ -63,7 +63,7 @@ const provider: DocumentSemanticTokensProvider = {
         }
         // Move
         for (let j = (op.length - 1) / 2 + 1; j < op.length; j++) {
-          tokensBuilder.push(i, idx, op[j].length, 3, 4);
+          tokensBuilder.push(i, idx, op[j].length, 4);
           idx += op[j].length + 1;
           // Comma
           tokensBuilder.push(i, idx - 1, 1, 5);
