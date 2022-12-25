@@ -1,19 +1,36 @@
+import type { Range } from "vscode-languageserver-textdocument";
+
+export class Elem {
+  private char: string;
+  private range: Range;
+  constructor(char: string, range: Range) {
+    this.char = char;
+    this.range = range;
+  }
+  public getChar(): string {
+    return this.char;
+  }
+  public getRange(): Range {
+    return this.range;
+  }
+}
+
 export class Operation {
-  private stateName: string;
-  private tape: string[];
-  private move: string[];
-  constructor(stateName: string, tape: string[], move: string[]) {
+  private stateName: Elem;
+  private tape: Elem[];
+  private move: Elem[];
+  constructor(stateName: Elem, tape: Elem[], move: Elem[]) {
     this.stateName = stateName;
     this.tape = tape;
     this.move = move;
   }
-  public getStateName(): string {
+  public getStateName(): Elem {
     return this.stateName;
   }
-  public getTape(): string[] {
+  public getTape(): Elem[] {
     return this.tape;
   }
-  public getMove(): string[] {
+  public getMove(): Elem[] {
     return this.move;
   }
 }
@@ -21,8 +38,10 @@ export class Operation {
 export class State {
   private name: string;
   private operations = new Map<string[], Operation>();
-  constructor(name: string) {
+  private range: Range;
+  constructor(name: string, range: Range) {
     this.name = name;
+    this.range = range;
   }
   public getName(): string {
     return this.name;
