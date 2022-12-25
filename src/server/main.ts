@@ -203,7 +203,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
           )
         );
       }
-      fileStates.push(new State(stateName));
+      fileStates.push(new State(stateName, lineRange));
     }
     // Operation
     else {
@@ -234,7 +234,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
           diagnostics.push(
             generateDiagnostic(
               DiagnosticSeverity.Error,
-              lineRange,
+              {
+                start: { line: i, character: 0 },
+                end: { line: i, character: line.indexOf(" - ") },
+              },
               `Condition should have ${fileConfig.tapes} element(s)`
             )
           );
@@ -243,7 +246,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
           diagnostics.push(
             generateDiagnostic(
               DiagnosticSeverity.Error,
-              lineRange,
+              {
+                start: { line: i, character: line.indexOf(" - ") + 3 },
+                end: { line: i, character: 1000 },
+              },
               `Operation should have ${fileConfig.tapes * 2 + 1} element(s)`
             )
           );
