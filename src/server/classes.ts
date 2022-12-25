@@ -55,6 +55,9 @@ export class State {
   public getOperation(cond: Elem): Operation | undefined {
     return this.operations.get(JSON.stringify(cond.getChar()));
   }
+  public getOperations(): Map<string, Operation> {
+    return this.operations;
+  }
   public getRange(): Range {
     return this.range;
   }

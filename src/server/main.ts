@@ -201,12 +201,14 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
             "This state name is reserved"
           )
         );
+        continue;
       }
       fileStates.push(new State(stateName, lineRange));
     }
     // Operation
     else {
       const [cond, op] = line.split(" - ").map((s) => s.split(","));
+      console.log(op);
       const state = fileStates.find((s) => s.getName() === nowParsingState);
       const condRange = {
         start: textDocument.positionAt(
@@ -330,7 +332,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
           textDocument.offsetAt({ line: i, character: 0 })
         ),
         end: textDocument.positionAt(
-          textDocument.offsetAt({ line: i, character: cond.join(",").length })
+          textDocument.offsetAt({ line: i, character: 1000 })
         ),
       };
       const condStr = JSON.stringify(cond);
@@ -374,6 +376,29 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       }
       diagnostics.push(diagnostic);
     }
+  }
+
+  // 存在しないState
+  {
+    fileStates.forEach((state) => {
+      console.log(state.getName(), state.getOperations());
+      state.getOperations().forEach((op) => {
+        const stateName = op.getStateName().getChar();
+        console.log(stateName);
+        if (stateName === "accept" || stateName === "reject") {
+          return;
+        }
+        if (!fileStates.some((s) => s.getName() === stateName)) {
+          diagnostics.push(
+            generateDiagnostic(
+              DiagnosticSeverity.Error,
+              op.getStateName().getRange(),
+              `State "${stateName}" is not defined`
+            )
+          );
+        }
+      });
+    });
   }
 
   states.set(textDocument.uri, fileStates);
