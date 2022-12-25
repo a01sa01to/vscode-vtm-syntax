@@ -289,20 +289,49 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
         sums.push(sums[j - 1] + op[j].length + 1);
       }
       const write = op.slice(1, fileConfig.tapes + 1).map((s, j) => {
-        return new Elem(s, {
+        const range = {
           start: { line: i, character: opOffset + sums[j] },
           end: { line: i, character: opOffset + sums[j] + s.length },
-        });
+        };
+        if (s.length !== 1) {
+          diagnostics.push(
+            generateDiagnostic(
+              DiagnosticSeverity.Error,
+              range,
+              `Write should be 1 character`
+            )
+          );
+        } else if (/[LRS]/.test(s)) {
+          diagnostics.push(
+            generateDiagnostic(
+              DiagnosticSeverity.Warning,
+              range,
+              `Write should not be L, R, or S (reserved for moves)`
+            )
+          );
+        }
+        return new Elem(s, range);
       });
-      const move = op.slice(2 * fileConfig.tapes + 1).map((s, j) => {
-        return new Elem(s, {
+      const move = op.slice(fileConfig.tapes + 1).map((s, j) => {
+        const range = {
           start: { line: i, character: opOffset + sums[j + fileConfig.tapes] },
           end: {
             line: i,
             character: opOffset + sums[j + fileConfig.tapes] + s.length,
           },
-        });
+        };
+        if (!/^L|R|S$/.test(s)) {
+          diagnostics.push(
+            generateDiagnostic(
+              DiagnosticSeverity.Error,
+              range,
+              `Move should be L, R, or S`
+            )
+          );
+        }
+        return new Elem(s, range);
       });
+      console.log("fiiii", write, move);
       state.addOperation(
         new Elem(JSON.stringify(cond), {
           start: {
