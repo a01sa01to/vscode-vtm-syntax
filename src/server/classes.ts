@@ -2,8 +2,8 @@ import type { Range } from "vscode-languageserver-textdocument";
 
 export class Elem {
   private char: string;
-  private range: Range;
-  constructor(char: string, range: Range) {
+  private range: Range | null;
+  constructor(char: string, range: Range | null) {
     this.char = char;
     this.range = range;
   }
@@ -11,6 +11,9 @@ export class Elem {
     return this.char;
   }
   public getRange(): Range {
+    if (this.range === null) {
+      throw new Error("range is null");
+    }
     return this.range;
   }
 }
@@ -37,7 +40,7 @@ export class Operation {
 
 export class State {
   private name: string;
-  private operations = new Map<string[], Operation>();
+  private operations = new Map<string, Operation>();
   private range: Range;
   constructor(name: string, range: Range) {
     this.name = name;
@@ -46,11 +49,13 @@ export class State {
   public getName(): string {
     return this.name;
   }
-  public addOperation(cond: string[], ope: Operation): boolean {
-    if (this.operations.has(cond)) {
-      return false;
-    }
-    this.operations.set(cond, ope);
-    return true;
+  public addOperation(cond: Elem, ope: Operation): void {
+    this.operations.set(JSON.stringify(cond.getChar()), ope);
+  }
+  public getOperation(cond: Elem): Operation | undefined {
+    return this.operations.get(JSON.stringify(cond.getChar()));
+  }
+  public getRange(): Range {
+    return this.range;
   }
 }
