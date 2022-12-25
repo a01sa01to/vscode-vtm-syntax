@@ -265,6 +265,35 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
           )
         );
       }
+      {
+        // Conditionの文字数が変だよ
+        let idx = 0;
+        for (let j = 0; j < cond.length; j++) {
+          const range = {
+            start: { line: i, character: idx },
+            end: { line: i, character: idx + cond[j].length },
+          };
+          if (cond[j].length === 0) {
+            diagnostics.push(
+              generateDiagnostic(
+                DiagnosticSeverity.Error,
+                range,
+                "Condition cannot be empty"
+              )
+            );
+          }
+          if (cond[j].length > 1) {
+            diagnostics.push(
+              generateDiagnostic(
+                DiagnosticSeverity.Error,
+                range,
+                "Condition must be 1 character"
+              )
+            );
+            idx += cond[j].length + 1;
+          }
+        }
+      }
       // 個数が変だよ
       if (op.length !== fileConfig.tapes * 2 + 1) {
         diagnostics.push(
@@ -298,7 +327,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
             generateDiagnostic(
               DiagnosticSeverity.Error,
               range,
-              `Write should be 1 character`
+              `Write must be 1 character`
             )
           );
         } else if (/[LRS]/.test(s)) {
