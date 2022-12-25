@@ -160,6 +160,18 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       continue;
     }
 
+    // Opがなんか変だよ
+    if (line.split(" - ").length > 2) {
+      diagnostics.push(
+        generateDiagnostic(
+          DiagnosticSeverity.Error,
+          lineRange,
+          `The number of " - " is too much`
+        )
+      );
+      continue;
+    }
+
     // State
     const stateName = line.includes(" - ") ? null : line;
     if (stateName !== null) {
