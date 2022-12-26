@@ -25,6 +25,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import stateSpecialChar from "./state/specialChar";
 import { Elem, Operation, State } from "./classes";
 import generateDiagnostic from "./utils/generateDiagnostic";
+import { inRange } from "./utils/inRange";
 
 // --------------- Global Variables ----------------- //
 const connection = createConnection(ProposedFeatures.all);
@@ -59,6 +60,7 @@ connection.onInitialize((params: InitializeParams) => {
       // Tell the client that this server supports code completion.
       hoverProvider: true,
       documentSymbolProvider: true,
+      definitionProvider: true,
       completionProvider: {
         resolveProvider: true,
       },
@@ -378,6 +380,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
         }),
         new Operation(nextState, write, move)
       );
+      console.log(state);
     }
   }
 
@@ -569,6 +572,39 @@ connection.onDocumentSymbol((params: DocumentSymbolParams) => {
     });
   });
   return symbols;
+});
+
+connection.onDefinition((params: TextDocumentPositionParams) => {
+  console.log("onDefinition", params);
+  const fileStates = states.get(params.textDocument.uri);
+  console.log("filestates", fileStates);
+  if (fileStates === undefined) {
+    return null;
+  }
+  let ret = null;
+  fileStates.forEach((state) => {
+    state.getOperations().forEach((op) => {
+      console.log(
+        op.getStateName().getRange(),
+        params.position,
+        inRange(params.position, op.getStateName().getRange())
+      );
+      if (inRange(params.position, op.getStateName().getRange())) {
+        const stateName = op.getStateName().getChar();
+        console.log(stateName, "filestates:", fileStates);
+        const found = fileStates.find((s) => s.getName() === stateName);
+        console.log("found:", found);
+        if (found) {
+          ret = {
+            uri: params.textDocument.uri,
+            range: found.getRange(),
+          };
+        }
+      }
+    });
+  });
+  console.log(ret);
+  return ret;
 });
 
 // Make the text document manager listen on the connection
