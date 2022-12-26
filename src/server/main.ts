@@ -6,6 +6,9 @@ import {
   CompletionItemKind,
   DidChangeConfigurationNotification,
   DiagnosticSeverity,
+  SymbolInformation,
+  SymbolKind,
+  DocumentSymbolParams,
 } from "vscode-languageserver/node";
 import type {
   Range,
@@ -55,6 +58,7 @@ connection.onInitialize((params: InitializeParams) => {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       // Tell the client that this server supports code completion.
       hoverProvider: true,
+      documentSymbolProvider: true,
       completionProvider: {
         resolveProvider: true,
       },
@@ -531,6 +535,40 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
     item.documentation = "JavaScript documentation";
   }
   return item;
+});
+
+connection.onDocumentSymbol((params: DocumentSymbolParams) => {
+  console.log("onDocumentSymbol", params);
+  const symbols: SymbolInformation[] = [];
+  const textDocument = documents.get(params.textDocument.uri);
+  if (textDocument === undefined) {
+    return symbols;
+  }
+  const fileStates = states.get(params.textDocument.uri);
+  if (fileStates === undefined) {
+    return symbols;
+  }
+  fileStates.forEach((state) => {
+    symbols.push({
+      name: state.getName(),
+      kind: SymbolKind.Class,
+      location: {
+        uri: params.textDocument.uri,
+        range: state.getRange(),
+      },
+    });
+    state.getOperations().forEach((op) => {
+      symbols.push({
+        name: op.getStateName().getChar(),
+        kind: SymbolKind.Method,
+        location: {
+          uri: params.textDocument.uri,
+          range: op.getStateName().getRange(),
+        },
+      });
+    });
+  });
+  return symbols;
 });
 
 // Make the text document manager listen on the connection
