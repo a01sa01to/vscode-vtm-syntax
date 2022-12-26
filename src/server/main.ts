@@ -493,8 +493,8 @@ connection.onHover((textDocumentPosition: TextDocumentPositionParams) => {
   if (fileStates === undefined) {
     return;
   }
-  const hover: Hover & { contents: MarkedString[] } = {
-    contents: [],
+  const hover: Hover & { contents: string[] } = {
+    contents: [""],
   };
   let stateName = "";
   for (let i = 0; i < fileStates.length; i++) {
@@ -508,7 +508,7 @@ connection.onHover((textDocumentPosition: TextDocumentPositionParams) => {
   if (state === undefined) {
     return;
   }
-  hover.contents.push(`State: ${state.getName()}`);
+  hover.contents[0] += `**State Name**\n${state.getName()}\n\n`;
   state.getOperations().forEach((op, cond) => {
     if (
       op.getStateName().getRange().start.line !==
@@ -516,20 +516,18 @@ connection.onHover((textDocumentPosition: TextDocumentPositionParams) => {
     ) {
       return;
     }
-    hover.contents.push(`Condition: ${JSON.parse(cond).join(",")}`);
-    hover.contents.push(`Next State: ${op.getStateName().getChar()}`);
-    hover.contents.push(
-      `Write: ${op
-        .getTape()
-        .map((el) => el.getChar())
-        .join(",")}`
-    );
-    hover.contents.push(
-      `Move: ${op
-        .getMove()
-        .map((el) => el.getChar())
-        .join(",")}`
-    );
+    hover.contents[0] += `**Condition**\n\n${(JSON.parse(cond) as string[])
+      .map((c, i) => ` - Tape ${i + 1}: *${c}*`)
+      .join("\n")}\n\n`;
+    hover.contents[0] += `**Next State**\n${op.getStateName().getChar()}\n\n`;
+    hover.contents[0] += `**Next Tape Letter**\n\n${op
+      .getTape()
+      .map((c, i) => ` - Tape ${i + 1}: *${c.getChar()}*`)
+      .join("\n")}\n\n`;
+    hover.contents[0] += `**Tape Head Move**\n\n${op
+      .getMove()
+      .map((c, i) => ` - Tape ${i + 1}: *${c.getChar()}*`)
+      .join("\n")}\n\n`;
   });
   return hover;
 });
