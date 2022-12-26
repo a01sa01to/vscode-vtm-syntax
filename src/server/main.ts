@@ -150,10 +150,16 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     // Config
     if (line.startsWith("##")) {
       if (line.toLowerCase().includes("tape")) {
-        fileConfig.tapes = parseInt(line.split(":")[1].trim());
+        const t = line.split(":");
+        if (t.length === 2) {
+          fileConfig.tapes = parseInt(t[1].trim());
+        }
       }
       if (line.toLowerCase().includes("initial")) {
-        fileConfig.initialState = line.split(":")[1].trim();
+        const t = line.split(":");
+        if (t.length === 2) {
+          fileConfig.initialState = t[1].trim();
+        }
       }
       continue;
     }
