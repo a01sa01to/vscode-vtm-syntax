@@ -9,6 +9,7 @@ import {
   SymbolInformation,
   SymbolKind,
   DocumentSymbolParams,
+  MarkedString,
 } from "vscode-languageserver/node";
 import type {
   Range,
@@ -486,16 +487,50 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
-connection.onHover((_textDocumentPosition: TextDocumentPositionParams) => {
-  console.log("onHover", _textDocumentPosition);
-  const hover: Hover = {
-    contents: [
-      {
-        language: "markdown",
-        value: `This is a hover`,
-      },
-    ],
+connection.onHover((textDocumentPosition: TextDocumentPositionParams) => {
+  console.log("onHover", textDocumentPosition);
+  const fileStates = states.get(textDocumentPosition.textDocument.uri);
+  if (fileStates === undefined) {
+    return;
+  }
+  const hover: Hover & { contents: MarkedString[] } = {
+    contents: [],
   };
+  let stateName = "";
+  for (let i = 0; i < fileStates.length; i++) {
+    const state = fileStates[i];
+    if (state.getRange().start.line > textDocumentPosition.position.line) {
+      break;
+    }
+    stateName = state.getName();
+  }
+  const state = fileStates.find((s) => s.getName() === stateName);
+  if (state === undefined) {
+    return;
+  }
+  hover.contents.push(`State: ${state.getName()}`);
+  state.getOperations().forEach((op, cond) => {
+    if (
+      op.getStateName().getRange().start.line !==
+      textDocumentPosition.position.line
+    ) {
+      return;
+    }
+    hover.contents.push(`Condition: ${JSON.parse(cond).join(",")}`);
+    hover.contents.push(`Next State: ${op.getStateName().getChar()}`);
+    hover.contents.push(
+      `Write: ${op
+        .getTape()
+        .map((el) => el.getChar())
+        .join(",")}`
+    );
+    hover.contents.push(
+      `Move: ${op
+        .getMove()
+        .map((el) => el.getChar())
+        .join(",")}`
+    );
+  });
   return hover;
 });
 

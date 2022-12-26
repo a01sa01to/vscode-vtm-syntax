@@ -50,10 +50,10 @@ export class State {
     return this.name;
   }
   public addOperation(cond: Elem, ope: Operation): void {
-    this.operations.set(JSON.stringify(cond.getChar()), ope);
+    this.operations.set(cond.getChar(), ope);
   }
   public getOperation(cond: Elem): Operation | undefined {
-    return this.operations.get(JSON.stringify(cond.getChar()));
+    return this.operations.get(cond.getChar());
   }
   public getOperations(): Map<string, Operation> {
     return this.operations;
