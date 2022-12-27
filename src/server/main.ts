@@ -545,36 +545,79 @@ connection.onDidChangeWatchedFiles((_change) => {
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
-  (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-    console.log("onCompletion", _textDocumentPosition);
+  (textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
+    console.log("onCompletion", textDocumentPosition);
     // The pass parameter contains the position of the text document in
     // which code complete got requested. For the example we ignore this
     // info and always provide the same completion items.
+    const fileStates = states.get(textDocumentPosition.textDocument.uri);
+    if (fileStates === undefined) {
+      return [];
+    }
     return [
+      ...fileStates.map((state) => {
+        return {
+          label: state.getName(),
+          data: `s-${state.getName()}`,
+          kind: CompletionItemKind.Function,
+        };
+      }),
       {
-        label: "TypeScript",
-        kind: CompletionItemKind.Text,
-        data: 1,
+        label: "accept",
+        data: "sc-accept",
+        kind: CompletionItemKind.Constant,
       },
       {
-        label: "JavaScript",
-        kind: CompletionItemKind.Text,
-        data: 2,
+        label: "reject",
+        data: "sc-reject",
+        kind: CompletionItemKind.Constant,
+      },
+      {
+        label: "L",
+        data: "m-L",
+        kind: CompletionItemKind.Operator,
+      },
+      {
+        label: "R",
+        data: "m-R",
+        kind: CompletionItemKind.Operator,
+      },
+      {
+        label: "S",
+        data: "m-S",
+        kind: CompletionItemKind.Operator,
       },
     ];
   }
 );
 
-// This handler resolves additional information for the item selected in
-// the completion list.
 connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
   console.log("onCompletionResolve", item);
-  if (item.data === 1) {
-    item.detail = "TypeScript details";
-    item.documentation = "TypeScript documentation";
-  } else if (item.data === 2) {
-    item.detail = "JavaScript details";
-    item.documentation = "JavaScript documentation";
+  if (item.data.startsWith("m-")) {
+    if (item.data === "m-L") {
+      item.detail = "Left";
+      item.documentation = "Move the corresponding tape head to the left";
+    }
+    if (item.data === "m-R") {
+      item.detail = "Right";
+      item.documentation = "Move the corresponding tape head to the right";
+    }
+    if (item.data === "m-S") {
+      item.detail = "Stay";
+      item.documentation = "Do not move the corresponding tape head";
+    }
+  } else if (item.data.startsWith("sc-")) {
+    if (item.data === "sc-accept") {
+      item.detail = "Accept";
+      item.documentation = "Accept the inputa and Stop the machine";
+    }
+    if (item.data === "sc-reject") {
+      item.detail = "Reject";
+      item.documentation = "Reject the inputa and Stop the machine";
+    }
+  } else if (item.data.startsWith("s-")) {
+    item.detail = item.label;
+    item.documentation = "Next state name";
   }
   return item;
 });
