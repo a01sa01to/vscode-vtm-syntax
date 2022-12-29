@@ -32,6 +32,20 @@
       "[virtual-turing-machine]": {
         "editor.semanticHighlighting.enabled": true
       }
+    },
+    "commands": [
+      {
+        "command": "vtm-syntax.addConfiguration",
+        "title": "Add Configuration"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "vtm-syntax.addConfiguration",
+          "when": "false"
+        }
+      ]
     }
   },
   "scripts": {

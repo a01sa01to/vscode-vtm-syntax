@@ -36,22 +36,12 @@ const config = new Map<
   string,
   { tapes: number; initialState: string; found: boolean }
 >();
-let hasConfigurationCapability = false;
-let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
 // --------------- Server Functions ----------------- //
 connection.onInitialize((params: InitializeParams) => {
   const capabilities = params.capabilities;
 
-  // Does the client support the `workspace/configuration` request?
-  // If not, we fall back using global settings.
-  hasConfigurationCapability = Boolean(
-    capabilities.workspace && capabilities.workspace.configuration
-  );
-  hasWorkspaceFolderCapability = Boolean(
-    capabilities.workspace && capabilities.workspace.workspaceFolders
-  );
   hasDiagnosticRelatedInformationCapability = Boolean(
     capabilities.textDocument &&
       capabilities.textDocument.publishDiagnostics &&
@@ -61,7 +51,6 @@ connection.onInitialize((params: InitializeParams) => {
   const result: InitializeResult = {
     capabilities: {
       textDocumentSync: TextDocumentSyncKind.Incremental,
-      // Tell the client that this server supports code completion.
       hoverProvider: true,
       documentSymbolProvider: true,
       definitionProvider: true,
@@ -73,71 +62,19 @@ connection.onInitialize((params: InitializeParams) => {
       },
     },
   };
-  if (hasWorkspaceFolderCapability) {
-    result.capabilities.workspace = {
-      workspaceFolders: {
-        supported: true,
-      },
-    };
-  }
   return result;
 });
 
-connection.onInitialized(() => {
-  if (hasConfigurationCapability) {
-    // Register for all configuration changes.
-    connection.client.register(
-      DidChangeConfigurationNotification.type,
-      undefined
-    );
-  }
-  if (hasWorkspaceFolderCapability) {
-    connection.workspace.onDidChangeWorkspaceFolders((_event) => {
-      connection.console.log("Workspace folder change event received.");
-    });
-  }
-});
-
-// The example settings
-interface ExtensionSettings {
-  maxNumberOfProblems: number;
-}
-
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
-const defaultSettings: ExtensionSettings = { maxNumberOfProblems: 100 };
-
-// Cache the settings of all open documents
-const documentSettings: Map<string, Thenable<ExtensionSettings>> = new Map();
-
-connection.onDidChangeConfiguration((change) => {
+connection.onDidChangeConfiguration((_change) => {
   // Revalidate all open text documents
   documents.all().forEach(validateTextDocument);
 });
 
-function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
-  let result = documentSettings.get(resource);
-  if (!result) {
-    result = new Promise((r) => r(defaultSettings));
-    documentSettings.set(resource, result);
-  }
-  return result;
-}
-
-// Only keep settings for open documents
-documents.onDidClose((e) => {
-  documentSettings.delete(e.document.uri);
-});
-
-// The content of a text document has changed. This event is emitted
-// when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
   validateTextDocument(change.document);
 });
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-  const settings = await getDocumentSettings(textDocument.uri);
   let fileStates: State[] = [];
   let fileConfig = { tapes: 0, initialState: "", found: false };
 
@@ -268,7 +205,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     // Operation
     else {
       const [cond, op] = line.split(" - ").map((s) => s.split(","));
-      console.log(op);
       const state = fileStates.find((s) => s.getName() === nowParsingState);
       const condRange = {
         start: textDocument.positionAt(
@@ -408,7 +344,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
         }
         return new Elem(s, range);
       });
-      console.log("fiiii", write, move);
       state.addOperation(
         new Elem(JSON.stringify(cond), {
           start: {
@@ -422,7 +357,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
         }),
         new Operation(nextState, write, move)
       );
-      console.log(state);
     }
   }
 
@@ -500,10 +434,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   // 存在しないState
   {
     fileStates.forEach((state) => {
-      console.log(state.getName(), state.getOperations());
       state.getOperations().forEach((op) => {
         const stateName = op.getStateName().getChar();
-        console.log(stateName);
         if (stateName === "accept" || stateName === "reject") {
           return;
         }
@@ -522,14 +454,12 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
   states.set(textDocument.uri, fileStates);
   config.set(textDocument.uri, fileConfig);
-  console.log(config, states);
 
   // Send the computed diagnostics to VSCode.
   connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
 connection.onHover((textDocumentPosition: TextDocumentPositionParams) => {
-  console.log("onHover", textDocumentPosition);
   const fileStates = states.get(textDocumentPosition.textDocument.uri);
   if (fileStates === undefined) {
     return;
@@ -573,15 +503,8 @@ connection.onHover((textDocumentPosition: TextDocumentPositionParams) => {
   return hover;
 });
 
-connection.onDidChangeWatchedFiles((_change) => {
-  // Monitored files have change in VSCode
-  connection.console.log("We received an file change event");
-});
-
-// This handler provides the initial list of the completion items.
 connection.onCompletion(
   (textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-    console.log("onCompletion", textDocumentPosition);
     // The pass parameter contains the position of the text document in
     // which code complete got requested. For the example we ignore this
     // info and always provide the same completion items.
@@ -627,7 +550,6 @@ connection.onCompletion(
 );
 
 connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
-  console.log("onCompletionResolve", item);
   if (item.data.startsWith("m-")) {
     if (item.data === "m-L") {
       item.detail = "Left";
@@ -658,7 +580,6 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
 });
 
 connection.onDocumentSymbol((params: DocumentSymbolParams) => {
-  console.log("onDocumentSymbol", params);
   const symbols: SymbolInformation[] = [];
   const textDocument = documents.get(params.textDocument.uri);
   if (textDocument === undefined) {
@@ -692,25 +613,16 @@ connection.onDocumentSymbol((params: DocumentSymbolParams) => {
 });
 
 connection.onDefinition((params: TextDocumentPositionParams) => {
-  console.log("onDefinition", params);
   const fileStates = states.get(params.textDocument.uri);
-  console.log("filestates", fileStates);
   if (fileStates === undefined) {
     return null;
   }
   let ret = null;
   fileStates.forEach((state) => {
     state.getOperations().forEach((op) => {
-      console.log(
-        op.getStateName().getRange(),
-        params.position,
-        inRange(params.position, op.getStateName().getRange())
-      );
       if (inRange(params.position, op.getStateName().getRange())) {
         const stateName = op.getStateName().getChar();
-        console.log(stateName, "filestates:", fileStates);
         const found = fileStates.find((s) => s.getName() === stateName);
-        console.log("found:", found);
         if (found) {
           ret = {
             uri: params.textDocument.uri,
@@ -720,12 +632,10 @@ connection.onDefinition((params: TextDocumentPositionParams) => {
       }
     });
   });
-  console.log(ret);
   return ret;
 });
 
 connection.onCodeLens((params: CodeLensParams) => {
-  console.log("onCodeLens", params);
   const fileConfig = config.get(params.textDocument.uri);
   if (fileConfig === undefined || fileConfig.found) {
     return [];
@@ -744,9 +654,5 @@ connection.onCodeLens((params: CodeLensParams) => {
   ];
 });
 
-// Make the text document manager listen on the connection
-// for open, change and close text document events
 documents.listen(connection);
-
-// Listen on the connection
 connection.listen();
