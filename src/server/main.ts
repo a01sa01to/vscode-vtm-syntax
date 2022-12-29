@@ -8,11 +8,11 @@ import {
   DiagnosticSeverity,
   SymbolInformation,
   SymbolKind,
-  DocumentSymbolParams,
-  MarkedString,
 } from "vscode-languageserver/node";
 import type {
   Range,
+  DocumentSymbolParams,
+  CodeLensParams,
   Hover,
   Diagnostic,
   InitializeParams,
@@ -32,7 +32,10 @@ import { inRange } from "./utils/inRange";
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const states = new Map<string, State[]>();
-const config = new Map<string, { tapes: number; initialState: string }>();
+const config = new Map<
+  string,
+  { tapes: number; initialState: string; found: boolean }
+>();
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
@@ -63,6 +66,9 @@ connection.onInitialize((params: InitializeParams) => {
       documentSymbolProvider: true,
       definitionProvider: true,
       completionProvider: {
+        resolveProvider: true,
+      },
+      codeLensProvider: {
         resolveProvider: true,
       },
     },
@@ -133,7 +139,7 @@ documents.onDidChangeContent((change) => {
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   const settings = await getDocumentSettings(textDocument.uri);
   let fileStates: State[] = [];
-  let fileConfig = { tapes: 0, initialState: "" };
+  let fileConfig = { tapes: 0, initialState: "", found: false };
 
   const diagnostics: Diagnostic[] = [];
   let nowParsingState = "";
@@ -152,14 +158,43 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       if (line.toLowerCase().includes("tape")) {
         const t = line.split(":");
         if (t.length === 2) {
-          fileConfig.tapes = parseInt(t[1].trim());
+          const tapes = parseInt(t[1].trim());
+          if (isNaN(tapes) || tapes < 1) {
+            diagnostics.push(
+              generateDiagnostic(
+                DiagnosticSeverity.Error,
+                lineRange,
+                `Number of tapes must be a positive integer`
+              )
+            );
+          } else {
+            fileConfig.tapes = tapes;
+          }
+        } else {
+          diagnostics.push(
+            generateDiagnostic(
+              DiagnosticSeverity.Error,
+              lineRange,
+              `Bad Configuration`
+            )
+          );
         }
+        fileConfig.found = true;
       }
       if (line.toLowerCase().includes("initial")) {
         const t = line.split(":");
         if (t.length === 2) {
           fileConfig.initialState = t[1].trim();
+        } else {
+          diagnostics.push(
+            generateDiagnostic(
+              DiagnosticSeverity.Error,
+              lineRange,
+              `Bad Configuration`
+            )
+          );
         }
+        fileConfig.found = true;
       }
       continue;
     }
@@ -687,6 +722,26 @@ connection.onDefinition((params: TextDocumentPositionParams) => {
   });
   console.log(ret);
   return ret;
+});
+
+connection.onCodeLens((params: CodeLensParams) => {
+  console.log("onCodeLens", params);
+  const fileConfig = config.get(params.textDocument.uri);
+  if (fileConfig === undefined || fileConfig.found) {
+    return [];
+  }
+  return [
+    {
+      range: {
+        start: { line: 0, character: 0 },
+        end: { line: 0, character: 0 },
+      },
+      command: {
+        title: "Add Configurations",
+        command: "vtm-syntax.addConfiguration",
+      },
+    },
+  ];
 });
 
 // Make the text document manager listen on the connection
