@@ -4,6 +4,10 @@
   "description": "Virtual Turing Machine Syntax",
   "publisher": "a01sa01to",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/a01sa01to/vscode-vtm-syntax.git"
+  },
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.74.0"
